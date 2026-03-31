@@ -4,6 +4,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor.Recorder;
+using UnityEditor.Recorder.Encoder;
+using UnityEditor.Recorder.Input;
+#endif
 
 namespace GameDataAnalysis
 {
@@ -22,17 +27,34 @@ namespace GameDataAnalysis
         [Tooltip("出力ディレクトリ")]
         public string outputDirectory = "GameData";
 
+        [Header("Unity Recorder（Editor Only）")]
+        [Tooltip("Game View を MP4 で記録する。Player ビルドでは無効（API はコンパイルされません）。")]
+        public bool enableUnityMovieRecorder;
+
+        [Tooltip("動画のフレームレート")]
+        public float unityMovieFrameRate = 30f;
+
+        public int unityMovieWidth = 1280;
+        public int unityMovieHeight = 720;
+
+        [Tooltip("MP4 にゲーム音声を含める（コーデックが対応する場合）")]
+        public bool unityMovieCaptureAudio = true;
+
         private SessionData sessionData;
         private float nextRecordTime;
         private float sessionStartTime;
         private bool isRecording;
-        private string sessionId;
+        public string sessionId;
 
         public delegate Dictionary<string, object> ValueGetter();
 
         public ValueGetter GetValue;
 
         public static DataRecorder Instance { get; private set; }
+
+#if UNITY_EDITOR
+        RecorderController unityRecorderController;
+#endif
 
         void Awake()
         {
@@ -53,6 +75,10 @@ namespace GameDataAnalysis
             isRecording = true;
 
             Debug.Log($"[GameDataRecorder] Recording started. Session ID: {sessionId}");
+
+#if UNITY_EDITOR
+            TryStartUnityMovieRecorder();
+#endif
         }
 
         void Update()
@@ -157,6 +183,10 @@ namespace GameDataAnalysis
             if (!isRecording) return;
 
             isRecording = false;
+
+#if UNITY_EDITOR
+            StopUnityMovieRecorderInternal();
+#endif
 
             if (autoSave)
             {
@@ -316,6 +346,68 @@ namespace GameDataAnalysis
                       .Replace("\r", "\\r")
                       .Replace("\t", "\\t");
         }
+
+#if UNITY_EDITOR
+        void TryStartUnityMovieRecorder()
+        {
+            if (!enableUnityMovieRecorder)
+                return;
+
+            StopUnityMovieRecorderInternal();
+
+            try
+            {
+                var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
+                var movieSettings = ScriptableObject.CreateInstance<MovieRecorderSettings>();
+
+                movieSettings.FrameRate = unityMovieFrameRate;
+                movieSettings.ImageInputSettings = new GameViewInputSettings
+                {
+                    OutputWidth = unityMovieWidth,
+                    OutputHeight = unityMovieHeight,
+                };
+                movieSettings.EncoderSettings = new CoreEncoderSettings
+                {
+                    Codec = CoreEncoderSettings.OutputCodec.MP4,
+                    EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.Medium,
+                };
+                movieSettings.CaptureAudio = unityMovieCaptureAudio;
+
+                string relativePath = Path.Combine(outputDirectory, $"{sessionId}.mp4").Replace('\\', '/');
+                movieSettings.OutputFile = relativePath;
+                movieSettings.Enabled = true;
+
+                controllerSettings.AddRecorderSettings(movieSettings);
+
+                unityRecorderController = new RecorderController(controllerSettings);
+                unityRecorderController.PrepareRecording();
+                unityRecorderController.StartRecording();
+
+                Debug.Log($"[GameDataRecorder] Unity Recorder 開始: {relativePath}.mp4");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GameDataRecorder] Unity Recorder の開始に失敗: {ex.Message}");
+            }
+        }
+
+        void StopUnityMovieRecorderInternal()
+        {
+            if (unityRecorderController == null)
+                return;
+
+            try
+            {
+                unityRecorderController.StopRecording();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GameDataRecorder] Unity Recorder の停止に失敗: {ex.Message}");
+            }
+
+            unityRecorderController = null;
+        }
+#endif
 
         void OnApplicationQuit()
         {

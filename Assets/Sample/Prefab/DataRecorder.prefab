@@ -48,6 +48,12 @@ MonoBehaviour:
   recordInterval: 0.1
   autoSave: 1
   outputDirectory: Data
+  enableUnityMovieRecorder: 1
+  unityMovieFrameRate: 30
+  unityMovieWidth: 1280
+  unityMovieHeight: 720
+  unityMovieCaptureAudio: 1
+  sessionId: 
 --- !u!114 &2040025046628387355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61,7 +67,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameTitle: Tetris
-  sessionId: 1c5247c6-0436-490a-a2d8-633ccebb1109
   age: 25
   skillLevel: intermediate
   difficulty: normal

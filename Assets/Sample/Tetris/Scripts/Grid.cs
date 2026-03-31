@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using GameDataAnalysis;
 
 
 // This class handle all the logic about deleting rows when a user
@@ -70,8 +71,11 @@ public class Grid : MonoBehaviour {
     }
 
     public static void deleteFullRows() {
-        for (int y = 0; y < h; y++) {
-            if (isRowFull(y)) {
+        int count = 0;
+        for (int y = 0; y < h; y++)
+        {
+            if (isRowFull(y))
+            {
                 deleteRow(y);
                 decreaseRowAbove(y + 1);
                 // add new points to score when a row is deleted
@@ -80,7 +84,13 @@ public class Grid : MonoBehaviour {
                 // NOTE: --y decreases y by one whenever a row was deleted.
                 // it's to make sure that the next step of the for loop continues
                 // at the correct index (which must be decreased by one, because we just deleted a row).
+                count++;
             }
+        }
+        if (count > 0)
+        {
+            if (DataRecorder.Instance != null)
+                DataRecorder.Instance.RecordEvent("rowCleared", count);
         }
     }
 

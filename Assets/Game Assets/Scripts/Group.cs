@@ -69,7 +69,7 @@ public class Group : MonoBehaviour {
         updateGrid(); // to not overleap invalid groups
         enabled = false; // disable script when dies
         UIController.gameOver(); // active Game Over panel
-        Highscore.Set(ScoreManager.score); // set highscore
+        HighScore.Set(ScoreManager.score); // set highscore
         //Music.stopMusic(); // stop Music
     }
 

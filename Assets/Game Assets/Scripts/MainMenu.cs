@@ -17,8 +17,8 @@ public class MainMenu : MonoBehaviour {
         numberOfButtons = buttons.Length;
         buttonSelected = 0;
         SelectNewGame();
-        if (Highscore.highscore > 0) {
-            highscoreText.text = Highscore.Get();
+        if (HighScore.highScore > 0) {
+            highscoreText.text = HighScore.Get();
             highScorePanel.SetActive(true);
         }
     }
